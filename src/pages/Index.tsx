@@ -236,6 +236,63 @@ export default function Index() {
           ))}
         </div>
       </div>
+
+      <Card className="p-6">
+        <h3 className="text-xl font-bold mb-4">История транзакций</h3>
+        <div className="space-y-3">
+          {[
+            { id: 1, type: 'purchase', nft: '🎉 Party Gift', amount: -100, date: '2025-11-03 14:30' },
+            { id: 2, type: 'deposit', nft: null, amount: 2500, date: '2025-11-02 10:15' },
+            { id: 3, type: 'gift', nft: '🎂 Birthday Cake', amount: 0, date: '2025-11-01 18:45' },
+            { id: 4, type: 'purchase', nft: '💎 Diamond', amount: -500, date: '2025-10-30 12:00' },
+            { id: 5, type: 'transfer', nft: '🚀 Rocket', amount: 0, date: '2025-10-28 16:20' },
+          ].map((transaction) => (
+            <div key={transaction.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                  transaction.type === 'purchase' ? 'bg-red-100 dark:bg-red-950' :
+                  transaction.type === 'deposit' ? 'bg-green-100 dark:bg-green-950' :
+                  transaction.type === 'gift' ? 'bg-purple-100 dark:bg-purple-950' :
+                  'bg-blue-100 dark:bg-blue-950'
+                }`}>
+                  <Icon 
+                    name={
+                      transaction.type === 'purchase' ? 'ShoppingCart' :
+                      transaction.type === 'deposit' ? 'ArrowDownToLine' :
+                      transaction.type === 'gift' ? 'Gift' :
+                      'ArrowRightLeft'
+                    } 
+                    size={20} 
+                    className={
+                      transaction.type === 'purchase' ? 'text-red-600 dark:text-red-400' :
+                      transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' :
+                      transaction.type === 'gift' ? 'text-purple-600 dark:text-purple-400' :
+                      'text-blue-600 dark:text-blue-400'
+                    }
+                  />
+                </div>
+                <div>
+                  <div className="font-semibold">
+                    {transaction.type === 'purchase' && 'Покупка NFT'}
+                    {transaction.type === 'deposit' && 'Пополнение баланса'}
+                    {transaction.type === 'gift' && 'Получен подарок'}
+                    {transaction.type === 'transfer' && 'Отправлен подарок'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {transaction.nft ? transaction.nft : 'Пополнение счета'} • {transaction.date}
+                  </div>
+                </div>
+              </div>
+              {transaction.amount !== 0 && (
+                <div className={`font-bold text-lg ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {transaction.amount > 0 ? '+' : ''}{transaction.amount}
+                  <Icon name="Sparkles" size={16} className="inline ml-1" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 
