@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -33,6 +33,8 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRarity, setSelectedRarity] = useState('all');
+  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
+  const [copiedCard, setCopiedCard] = useState(false);
 
   const filteredNFTs = mockNFTs.filter(nft => {
     const matchesSearch = nft.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -169,10 +171,56 @@ export default function Index() {
         </div>
 
         <div className="flex gap-2">
-          <Button className="flex-1">
-            <Icon name="Plus" size={20} className="mr-2" />
-            Пополнить баланс
-          </Button>
+          <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex-1">
+                <Icon name="Plus" size={20} className="mr-2" />
+                Пополнить баланс
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Пополнение баланса</DialogTitle>
+                <DialogDescription>
+                  Переведите средства на указанный номер карты
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="bg-muted rounded-lg p-6 text-center space-y-3">
+                  <div className="text-sm text-muted-foreground">Номер карты для пополнения</div>
+                  <div className="text-2xl font-mono font-bold tracking-wider">
+                    2200 7019 7410 1922
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText('2200701974101922');
+                      setCopiedCard(true);
+                      setTimeout(() => setCopiedCard(false), 2000);
+                    }}
+                  >
+                    <Icon name={copiedCard ? "Check" : "Copy"} size={16} className="mr-2" />
+                    {copiedCard ? 'Скопировано!' : 'Скопировать номер'}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Сумма пополнения (₽)</Label>
+                  <Input id="amount" type="number" placeholder="1000" />
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 text-sm text-blue-900 dark:text-blue-100">
+                  <div className="flex gap-2">
+                    <Icon name="Info" size={16} className="mt-0.5 flex-shrink-0" />
+                    <div>
+                      После перевода средства зачислятся на баланс автоматически в течение 5 минут. 
+                      1 ₽ = 1 монета в системе.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" className="flex-1">
             <Icon name="Send" size={20} className="mr-2" />
             Отправить подарок
