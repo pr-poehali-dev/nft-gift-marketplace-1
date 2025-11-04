@@ -72,10 +72,30 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 """, (user_id,))
                 owned_nfts = cur.fetchall()
                 
+                cur.execute("""
+                    SELECT 
+                        t.id,
+                        t.transaction_type,
+                        t.amount,
+                        t.created_at,
+                        n.emoji,
+                        n.name as nft_name
+                    FROM transactions t
+                    LEFT JOIN nfts n ON t.nft_id = n.id
+                    WHERE t.to_user_id = %s OR t.from_user_id = %s
+                    ORDER BY t.created_at DESC
+                    LIMIT 20
+                """, (user_id, user_id))
+                transactions = cur.fetchall()
+                
                 return {
                     'statusCode': 200,
                     'headers': headers,
-                    'body': json.dumps({'user': user, 'owned_nfts': owned_nfts}, default=json_serial),
+                    'body': json.dumps({
+                        'user': user, 
+                        'owned_nfts': owned_nfts,
+                        'transactions': transactions
+                    }, default=json_serial),
                     'isBase64Encoded': False
                 }
             

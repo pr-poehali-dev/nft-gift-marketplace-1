@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import NFTCard from '@/components/NFTCard';
 import { Input } from '@/components/ui/input';
@@ -29,14 +29,56 @@ const mockNFTs = [
   { id: 8, emoji: '🏆', name: 'Trophy', price: 800, rarity: 'legendary' as const, gradient: 'bg-gradient-to-br from-amber-400 to-orange-600' },
 ];
 
+const API_URL = 'https://functions.poehali.dev/5d77d8b7-4f38-4cfd-bda5-d4d3725aa24c';
+
 export default function Index() {
   const [currentPage, setCurrentPage] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRarity, setSelectedRarity] = useState('all');
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [copiedCard, setCopiedCard] = useState(false);
+  const [nfts, setNfts] = useState(mockNFTs);
+  const [userData, setUserData] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const filteredNFTs = mockNFTs.filter(nft => {
+  useEffect(() => {
+    fetchNFTs();
+    fetchStats();
+    fetchUserData();
+  }, []);
+
+  const fetchNFTs = async () => {
+    try {
+      const response = await fetch(`${API_URL}?action=nfts`);
+      const data = await response.json();
+      if (data.nfts) setNfts(data.nfts);
+    } catch (error) {
+      console.error('Error fetching NFTs:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}?action=stats`);
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(`${API_URL}?action=user&userId=1`);
+      const data = await response.json();
+      setUserData(data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const filteredNFTs = nfts.filter(nft => {
     const matchesSearch = nft.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRarity = selectedRarity === 'all' || nft.rarity === selectedRarity;
     return matchesSearch && matchesRarity;
@@ -62,7 +104,7 @@ export default function Index() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Популярные подарки</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {mockNFTs.slice(0, 4).map((nft) => (
+          {nfts.slice(0, 4).map((nft) => (
             <NFTCard key={nft.id} {...nft} />
           ))}
         </div>
@@ -72,19 +114,19 @@ export default function Index() {
         <h3 className="text-xl font-bold mb-4">Статистика платформы</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">1,234</div>
+            <div className="text-3xl font-bold text-primary">{stats?.total_sales || 0}</div>
             <div className="text-sm text-muted-foreground">NFT продано</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">567</div>
+            <div className="text-3xl font-bold text-primary">{stats?.total_users || 0}</div>
             <div className="text-sm text-muted-foreground">Пользователей</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">89</div>
+            <div className="text-3xl font-bold text-primary">{stats?.total_nfts || 0}</div>
             <div className="text-sm text-muted-foreground">Типов подарков</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">12,456</div>
+            <div className="text-3xl font-bold text-primary">{stats?.total_transactions || 0}</div>
             <div className="text-sm text-muted-foreground">Транзакций</div>
           </div>
         </div>
@@ -154,18 +196,18 @@ export default function Index() {
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{userData?.owned_nfts?.length || 0}</div>
             <div className="text-sm text-muted-foreground">NFT в коллекции</div>
           </div>
           <div className="text-center p-4 bg-muted rounded-lg">
             <div className="text-2xl font-bold flex items-center justify-center gap-1">
               <Icon name="Sparkles" size={20} className="text-primary" />
-              2,500
+              {userData?.user?.balance || 0}
             </div>
             <div className="text-sm text-muted-foreground">Баланс</div>
           </div>
           <div className="text-center p-4 bg-muted rounded-lg">
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{userData?.transactions?.filter((t: any) => t.transaction_type === 'transfer').length || 0}</div>
             <div className="text-sm text-muted-foreground">Подарков отправлено</div>
           </div>
         </div>
@@ -231,66 +273,74 @@ export default function Index() {
       <div>
         <h3 className="text-xl font-bold mb-4">Моя коллекция</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {mockNFTs.slice(0, 5).map((nft) => (
-            <NFTCard key={nft.id} {...nft} owned />
-          ))}
+          {userData?.owned_nfts && userData.owned_nfts.length > 0 ? (
+            userData.owned_nfts.map((nft: any) => (
+              <NFTCard key={nft.id} {...nft} owned />
+            ))
+          ) : (
+            <div className="col-span-4 text-center py-12 text-muted-foreground">
+              <Icon name="Package" size={48} className="mx-auto mb-4 opacity-50" />
+              <p>У вас пока нет NFT в коллекции</p>
+            </div>
+          )}
         </div>
       </div>
 
       <Card className="p-6">
         <h3 className="text-xl font-bold mb-4">История транзакций</h3>
         <div className="space-y-3">
-          {[
-            { id: 1, type: 'purchase', nft: '🎉 Party Gift', amount: -100, date: '2025-11-03 14:30' },
-            { id: 2, type: 'deposit', nft: null, amount: 2500, date: '2025-11-02 10:15' },
-            { id: 3, type: 'gift', nft: '🎂 Birthday Cake', amount: 0, date: '2025-11-01 18:45' },
-            { id: 4, type: 'purchase', nft: '💎 Diamond', amount: -500, date: '2025-10-30 12:00' },
-            { id: 5, type: 'transfer', nft: '🚀 Rocket', amount: 0, date: '2025-10-28 16:20' },
-          ].map((transaction) => (
+          {userData?.transactions && userData.transactions.length > 0 ? (
+            userData.transactions.map((transaction: any) => (
             <div key={transaction.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
-                  transaction.type === 'purchase' ? 'bg-red-100 dark:bg-red-950' :
-                  transaction.type === 'deposit' ? 'bg-green-100 dark:bg-green-950' :
-                  transaction.type === 'gift' ? 'bg-purple-100 dark:bg-purple-950' :
+                  transaction.transaction_type === 'purchase' ? 'bg-red-100 dark:bg-red-950' :
+                  transaction.transaction_type === 'deposit' ? 'bg-green-100 dark:bg-green-950' :
+                  transaction.transaction_type === 'gift' ? 'bg-purple-100 dark:bg-purple-950' :
                   'bg-blue-100 dark:bg-blue-950'
                 }`}>
                   <Icon 
                     name={
-                      transaction.type === 'purchase' ? 'ShoppingCart' :
-                      transaction.type === 'deposit' ? 'ArrowDownToLine' :
-                      transaction.type === 'gift' ? 'Gift' :
+                      transaction.transaction_type === 'purchase' ? 'ShoppingCart' :
+                      transaction.transaction_type === 'deposit' ? 'ArrowDownToLine' :
+                      transaction.transaction_type === 'gift' ? 'Gift' :
                       'ArrowRightLeft'
                     } 
                     size={20} 
                     className={
-                      transaction.type === 'purchase' ? 'text-red-600 dark:text-red-400' :
-                      transaction.type === 'deposit' ? 'text-green-600 dark:text-green-400' :
-                      transaction.type === 'gift' ? 'text-purple-600 dark:text-purple-400' :
+                      transaction.transaction_type === 'purchase' ? 'text-red-600 dark:text-red-400' :
+                      transaction.transaction_type === 'deposit' ? 'text-green-600 dark:text-green-400' :
+                      transaction.transaction_type === 'gift' ? 'text-purple-600 dark:text-purple-400' :
                       'text-blue-600 dark:text-blue-400'
                     }
                   />
                 </div>
                 <div>
                   <div className="font-semibold">
-                    {transaction.type === 'purchase' && 'Покупка NFT'}
-                    {transaction.type === 'deposit' && 'Пополнение баланса'}
-                    {transaction.type === 'gift' && 'Получен подарок'}
-                    {transaction.type === 'transfer' && 'Отправлен подарок'}
+                    {transaction.transaction_type === 'purchase' && 'Покупка NFT'}
+                    {transaction.transaction_type === 'deposit' && 'Пополнение баланса'}
+                    {transaction.transaction_type === 'gift' && 'Получен подарок'}
+                    {transaction.transaction_type === 'transfer' && 'Отправлен подарок'}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {transaction.nft ? transaction.nft : 'Пополнение счета'} • {transaction.date}
+                    {transaction.emoji && `${transaction.emoji} ${transaction.nft_name}`} • {new Date(transaction.created_at).toLocaleString('ru-RU')}
                   </div>
                 </div>
               </div>
-              {transaction.amount !== 0 && (
+              {transaction.amount && transaction.amount !== 0 && (
                 <div className={`font-bold text-lg ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {transaction.amount > 0 ? '+' : ''}{transaction.amount}
                   <Icon name="Sparkles" size={16} className="inline ml-1" />
                 </div>
               )}
             </div>
-          ))}
+          ))
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <Icon name="History" size={48} className="mx-auto mb-4 opacity-50" />
+              <p>История транзакций пуста</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
