@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Get all NFTs",
+      "method": "GET",
+      "path": "/?action=nfts",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get marketplace stats",
+      "method": "GET",
+      "path": "/?action=stats",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get user profile",
+      "method": "GET",
+      "path": "/?action=user&userId=1",
+      "expectedStatus": 200
+    }
+  ]
+}
